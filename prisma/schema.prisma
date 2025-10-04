@@ -1,0 +1,145 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model abastecimientos {
+  lugar_id            Int
+  tipo                String  @db.VarChar(80)
+  porcentaje_restante Int
+  lugares             lugares @relation(fields: [lugar_id], references: [lugar_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([lugar_id, tipo])
+}
+
+model bitacora_cambios {
+  id_operacion Int      @id @default(autoincrement())
+  tipo         String   @db.VarChar(80)
+  fecha        DateTime @db.Timestamp(6)
+  user_id      Int
+  usuarios     usuarios @relation(fields: [user_id], references: [user_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model cirugias {
+  cirugia_id    Int      @id @default(autoincrement())
+  paciente_id   Int
+  fecha_hora    DateTime @db.Timestamp(6)
+  medico_id     Int
+  procedimiento String   @db.VarChar(200)
+  medicos       medicos  @relation(fields: [medico_id], references: [medico_id], onDelete: NoAction, onUpdate: NoAction)
+  paciente      paciente @relation(fields: [paciente_id], references: [paciente_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([paciente_id, fecha_hora], map: "idx_cirugias_paciente_fecha")
+}
+
+model enfermedades {
+  enfermedad_id          Int                      @id @default(autoincrement())
+  nombre_enfermedad      String                   @db.VarChar(120)
+  zona                   String                   @db.VarChar(60)
+  enfermedades_pacientes enfermedades_pacientes[]
+  visitas                visitas[]
+}
+
+model enfermedades_pacientes {
+  paciente_id   Int
+  enfermedad_id Int
+  estado        String       @db.VarChar(80)
+  enfermedades  enfermedades @relation(fields: [enfermedad_id], references: [enfermedad_id], onDelete: NoAction, onUpdate: NoAction)
+  paciente      paciente     @relation(fields: [paciente_id], references: [paciente_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([paciente_id, enfermedad_id])
+  @@index([enfermedad_id], map: "idx_enf_pac_enfermedad")
+}
+
+model lugares {
+  lugar_id              Int                     @id @default(autoincrement())
+  nombre                String                  @db.VarChar(120)
+  tipo                  String                  @db.VarChar(60)
+  zona                  String                  @db.VarChar(60)
+  abastecimientos       abastecimientos[]
+  medicos               medicos[]
+  registro_trabajadores registro_trabajadores[]
+  usuarios              usuarios[]
+  visitas               visitas[]
+}
+
+model medicos {
+  medico_id             Int                     @id @default(autoincrement())
+  nombre                String                  @db.VarChar(80)
+  apellido              String                  @db.VarChar(80)
+  direccion             String                  @db.VarChar(200)
+  telefono              String                  @db.VarChar(40)
+  numero_colegiado      String                  @unique(map: "uq_medico_numero_colegiado") @db.VarChar(40)
+  especialidad          String                  @db.VarChar(100)
+  lugar_id              Int
+  cirugias              cirugias[]
+  lugares               lugares                 @relation(fields: [lugar_id], references: [lugar_id], onDelete: NoAction, onUpdate: NoAction)
+  registro_trabajadores registro_trabajadores[]
+  usuarios              usuarios?
+  visitas               visitas[]
+}
+
+model paciente {
+  paciente_id            Int                      @id @default(autoincrement())
+  nombre                 String                   @db.VarChar(80)
+  apellido               String                   @db.VarChar(80)
+  telefono               String                   @db.VarChar(40)
+  direccion              String                   @db.VarChar(200)
+  masa_corporal          Decimal                  @db.Decimal(5, 2)
+  altura                 Int
+  peso                   Decimal                  @db.Decimal(6, 2)
+  adicciones             String                   @db.VarChar(200)
+  evolucion              String                   @db.VarChar(300)
+  status                 String                   @db.VarChar(60)
+  dpi                    String                   @unique(map: "uq_paciente_dpi") @db.VarChar(32)
+  cirugias               cirugias[]
+  enfermedades_pacientes enfermedades_pacientes[]
+  visitas                visitas[]
+}
+
+model registro_trabajadores {
+  medico_id    Int
+  lugar_id     Int
+  fecha_inicio DateTime  @db.Timestamp(6)
+  fecha_salida DateTime? @db.Timestamp(6)
+  lugares      lugares   @relation(fields: [lugar_id], references: [lugar_id], onDelete: NoAction, onUpdate: NoAction)
+  medicos      medicos   @relation(fields: [medico_id], references: [medico_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([medico_id, lugar_id, fecha_inicio])
+}
+
+model usuarios {
+  user_id          Int                @id @default(autoincrement())
+  tipo             String             @db.VarChar(40)
+  correo           String             @unique(map: "uq_usuarios_correo") @db.VarChar(160)
+  contrasena       String             @db.VarChar(200)
+  medico_id        Int?               @unique(map: "uq_usuarios_medico")
+  lugar_id         Int?
+  bitacora_cambios bitacora_cambios[]
+  lugares          lugares?           @relation(fields: [lugar_id], references: [lugar_id], onDelete: NoAction, onUpdate: NoAction, map: "usuarios_lugar_id_fk")
+  medicos          medicos?           @relation(fields: [medico_id], references: [medico_id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model visitas {
+  visita_id     Int          @id @default(autoincrement())
+  paciente_id   Int
+  fecha         DateTime     @db.Date
+  hora          String       @db.VarChar(20)
+  lugar_id      Int
+  medico_id     Int
+  examen        String       @db.VarChar(200)
+  enfermedad_id Int
+  medicamentos  String       @db.VarChar(300)
+  evolucion     String       @db.VarChar(300)
+  enfermedades  enfermedades @relation(fields: [enfermedad_id], references: [enfermedad_id], onDelete: NoAction, onUpdate: NoAction)
+  lugares       lugares      @relation(fields: [lugar_id], references: [lugar_id], onDelete: NoAction, onUpdate: NoAction)
+  medicos       medicos      @relation(fields: [medico_id], references: [medico_id], onDelete: NoAction, onUpdate: NoAction)
+  paciente      paciente     @relation(fields: [paciente_id], references: [paciente_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([paciente_id, fecha], map: "idx_visitas_paciente_fecha")
+}
