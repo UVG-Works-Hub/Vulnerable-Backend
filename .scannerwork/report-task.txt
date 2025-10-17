@@ -1,6 +1,6 @@
-projectKey=backend
+projectKey=vulnerable-backend
 serverUrl=http://localhost:9000
 serverVersion=25.10.0.114319
-dashboardUrl=http://localhost:9000/dashboard?id=backend
-ceTaskId=2fdf6d1c-dfae-4e16-ad81-1553722d1f24
-ceTaskUrl=http://localhost:9000/api/ce/task?id=2fdf6d1c-dfae-4e16-ad81-1553722d1f24
+dashboardUrl=http://localhost:9000/dashboard?id=vulnerable-backend
+ceTaskId=c7c0d6f9-e9cd-4ea5-a46b-b6c3d418715b
+ceTaskUrl=http://localhost:9000/api/ce/task?id=c7c0d6f9-e9cd-4ea5-a46b-b6c3d418715b
